@@ -271,6 +271,7 @@ class Speaker extends Writable {
   close (flush) {
     debug('close(%o)', flush)
     if (this._closed) return debug('already closed...')
+    this._closed = true
 
     if (this.audio_handle) {
       if (flush !== false) {
@@ -282,13 +283,17 @@ class Speaker extends Writable {
       debug('invoking close() native binding')
       binding.close(this.audio_handle).catch((e) => {
         this.emit('error', e)
+      }).then(() => {
+        debug('close() native binding resolved')
+        this.emit('close')
       })
+      
       this.audio_handle = null
+      return // close will be emitted in the promise callback
     } else {
       debug('not invoking flush() or close() bindings since no `audio_handle`')
     }
 
-    this._closed = true
     this.emit('close')
   }
 }
