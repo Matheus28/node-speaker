@@ -23,12 +23,14 @@ typedef struct {
   unsigned char* buffer;
 
   napi_deferred deferred;
+  napi_async_work work;
 } WriteData;
 
 typedef struct {
   audio_output_t *ao;
   char *device;
   napi_deferred deferred;
+  napi_async_work work;
 } CloseData;
 
 bool is_string(napi_env env, napi_value value) {
@@ -101,6 +103,7 @@ void write_complete(napi_env env, napi_status status, void* _data) {
   napi_value written;
   assert(napi_create_uint32(env, data->written, &written) == napi_ok);
   assert(napi_resolve_deferred(env, data->deferred, written) == napi_ok);
+  assert(napi_delete_async_work(env, data->work) == napi_ok);
 
   free(_data);
 }
@@ -125,9 +128,9 @@ napi_value speaker_write(napi_env env, napi_callback_info info) {
   assert(napi_create_string_utf8(env, "speaker:write", NAPI_AUTO_LENGTH, &work_name) == napi_ok);
 
   napi_async_work work;
-  assert(napi_create_async_work(env, NULL, work_name, write_execute, write_complete, (void*) data, &work) == napi_ok);
+  assert(napi_create_async_work(env, NULL, work_name, write_execute, write_complete, (void*) data, &data->work) == napi_ok);
 
-  assert(napi_queue_async_work(env, work) == napi_ok);
+  assert(napi_queue_async_work(env, data->work) == napi_ok);
 
   return promise;
 }
@@ -175,6 +178,7 @@ void close_complete(napi_env env, napi_status status, void* _data) {
   napi_value undefined;
   assert(napi_get_undefined(env, &undefined) == napi_ok);
   assert(napi_resolve_deferred(env, data->deferred, undefined) == napi_ok);
+  assert(napi_delete_async_work(env, data->work) == napi_ok);
 
   free(_data);
 }
@@ -198,10 +202,9 @@ napi_value speaker_close(napi_env env, napi_callback_info info) {
   napi_value work_name;
   assert(napi_create_string_utf8(env, "speaker:close", NAPI_AUTO_LENGTH, &work_name) == napi_ok);
 
-  napi_async_work work;
-  assert(napi_create_async_work(env, NULL, work_name, close_execute, close_complete, (void*) data, &work) == napi_ok);
+  assert(napi_create_async_work(env, NULL, work_name, write_execute, close_complete, (void*) data, &data->work) == napi_ok);
 
-  assert(napi_queue_async_work(env, work) == napi_ok);
+  assert(napi_queue_async_work(env, data->work) == napi_ok);
 
   return promise;
 }
