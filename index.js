@@ -279,9 +279,10 @@ class Speaker extends Writable {
         binding.flush(this.audio_handle)
       }
 
-      // TODO: async maybe?
       debug('invoking close() native binding')
-      binding.close(this.audio_handle)
+      binding.close(this.audio_handle).catch((e) => {
+        this.emit('error', e)
+      })
       this.audio_handle = null
     } else {
       debug('not invoking flush() or close() bindings since no `audio_handle`')
