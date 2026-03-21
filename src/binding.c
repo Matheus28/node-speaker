@@ -127,7 +127,6 @@ napi_value speaker_write(napi_env env, napi_callback_info info) {
   napi_value work_name;
   assert(napi_create_string_utf8(env, "speaker:write", NAPI_AUTO_LENGTH, &work_name) == napi_ok);
 
-  napi_async_work work;
   assert(napi_create_async_work(env, NULL, work_name, write_execute, write_complete, (void*) data, &data->work) == napi_ok);
 
   assert(napi_queue_async_work(env, data->work) == napi_ok);
@@ -190,7 +189,6 @@ napi_value speaker_close(napi_env env, napi_callback_info info) {
 
   Speaker *speaker;
   assert(napi_unwrap(env, args[0], (void**) &speaker) == napi_ok);
-  audio_output_t *ao = &speaker->ao;
   
   CloseData* data = malloc(sizeof(CloseData));
   data->ao = &speaker->ao;
@@ -202,7 +200,7 @@ napi_value speaker_close(napi_env env, napi_callback_info info) {
   napi_value work_name;
   assert(napi_create_string_utf8(env, "speaker:close", NAPI_AUTO_LENGTH, &work_name) == napi_ok);
 
-  assert(napi_create_async_work(env, NULL, work_name, write_execute, close_complete, (void*) data, &data->work) == napi_ok);
+  assert(napi_create_async_work(env, NULL, work_name, close_execute, close_complete, (void*) data, &data->work) == napi_ok);
 
   assert(napi_queue_async_work(env, data->work) == napi_ok);
 
